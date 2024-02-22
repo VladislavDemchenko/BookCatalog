@@ -1,5 +1,6 @@
 package org.example.bookcatalog.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,17 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class SortController {
 
     @GetMapping("byName")
-    public String sortByName (){ //sort name by alphabet
+    public ResponseEntity<?> sortByName (){ //sort name by alphabet
         return null;
     }
 
     @GetMapping("/byLastUpdate")
-    public String sortByLastUpdate (){
+    public ResponseEntity<?> sortByLastUpdate (){
         return null;
     }
 
     @GetMapping("/byCreationDate")
-    public String sortByCreationDate (){
+    public ResponseEntity<?> sortByCreationDate (){
         return null;
     }
 }

@@ -2,6 +2,7 @@ package org.example.bookcatalog.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import org.example.bookcatalog.exception.InvalidRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,7 +10,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Service
-public class MainService {
+public class SessionService {
 
     private EntityManager entityManager;
 
@@ -32,21 +33,29 @@ public class MainService {
         }
     }
 
-    public String exceptionHandler(Long id) {
-        Long countOfId= executeInTransactionReturning(
-                entityManager -> entityManager.createQuery("SELECT COUNT(u.id) FROM Catalog u WHERE u.id = :userId", Long.class)
-                        .setParameter("userId", id)
-                        .getSingleResult());
-        System.out.println(countOfId);
-        if(id == null || countOfId != 1){
-            return "this Catalog is not valid";
-        }
-        return null;
 
+
+    public  <T> void validId(Long id, T entity) {
+        Class<?> entityClass = entity.getClass();
+
+        Long countOfId = executeInTransactionReturning(
+                entityManager -> entityManager.createQuery(
+                                "SELECT COUNT(u.id) FROM " + entityClass.getSimpleName() + " u WHERE u.id = :userId",
+                                Long.class)
+                        .setParameter("userId", id)
+                        .getSingleResult()
+        );
+
+        if (id == null) {
+            throw new InvalidRequestException("Operation cannot be performed: identifier is missing. Please check the entered data and try again.");
+        } else if (countOfId != 1) {
+            throw new InvalidRequestException("Invalid identifier: the value of id cannot be zero. Please provide a valid identifier.");
+        }
     }
 
+
     @Autowired
-    public MainService(EntityManagerFactory entityManagerFactory) {
+    public SessionService(EntityManagerFactory entityManagerFactory) {
         entityManager = entityManagerFactory.createEntityManager();
     }
 }

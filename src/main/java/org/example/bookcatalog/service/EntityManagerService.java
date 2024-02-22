@@ -65,7 +65,7 @@ public class EntityManagerService {
 
     private String exceptionHandler(Long id) {
         Long countOfId= executeInTransactionReturning(
-                entityManager -> entityManager.createQuery("SELECT COUNT(u.id) FROM Person u WHERE u.id = :userId", Long.class)
+                entityManager -> entityManager.createQuery("SELECT COUNT(u.id) FROM Book u WHERE u.id = :userId", Long.class)
                         .setParameter("userId", id)
                         .getSingleResult());
         System.out.println(countOfId);

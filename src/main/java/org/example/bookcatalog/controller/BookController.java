@@ -4,6 +4,7 @@ import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.entity.Note;
 import org.example.bookcatalog.service.EntityManagerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -17,26 +18,26 @@ public class BookController {
 
 
     @PostMapping("/addBook")
-    public String addBook(@RequestBody Book book, BindingResult bindingResult){
-        return entityManagerService.addUser(book, bindingResult);
+    public ResponseEntity<?> addBook(@RequestBody Book book, BindingResult bindingResult){
+        return null;
     }
 
 
     @DeleteMapping("/deleteBook{id}")
-    public String delete(@PathVariable Long id){
-        return entityManagerService.delete(id);
+    public ResponseEntity<?> delete(@PathVariable Long id){
+        return null;
     }
 
 
     @GetMapping("/getBook/{id}")
-    public String findById(@PathVariable Long id){
-        return entityManagerService.findById(id);
+    public ResponseEntity<?> findById(@PathVariable Long id){
+        return null;
     }
 
 
     @GetMapping("/allBook")
-    public List<Book> getAllUsers(){
-        return entityManagerService.getAllUsers();
+    public ResponseEntity<?> getAllUsers(){
+        return null;
     }
 
 
