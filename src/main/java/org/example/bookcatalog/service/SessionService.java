@@ -2,6 +2,7 @@ package org.example.bookcatalog.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityNotFoundException;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +13,7 @@ import java.util.function.Function;
 @Service
 public class SessionService {
 
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
 
     public void executeInTransaction(Consumer<EntityManager> entityManagerConsumer){ //work in session with void return type
         executeInTransactionReturning(entityManager -> {
@@ -35,7 +36,7 @@ public class SessionService {
 
 
 
-    public  <T> void validId(Long id, T entity) {
+    public  <T> void validId(Long id, T entity) {// method provides greater flexibility and control over validation, but you can also use BindingResult
         Class<?> entityClass = entity.getClass();
 
         Long countOfId = executeInTransactionReturning(

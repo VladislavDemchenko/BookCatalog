@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,8 @@ public class Book {
     private String body;
 
     private BigDecimal pageCount;
+
+    private LocalDateTime creationDate;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
     private List<Note> notes = new ArrayList<>(); // user note for current book

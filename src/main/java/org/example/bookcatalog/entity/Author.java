@@ -4,6 +4,8 @@ package org.example.bookcatalog.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +20,12 @@ public class Author {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String firstName;
 
     private String lastName;
+
+    private LocalDateTime creationDate;
 
     @Setter(value = AccessLevel.PRIVATE)
     @ManyToMany
