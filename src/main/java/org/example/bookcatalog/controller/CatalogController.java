@@ -15,7 +15,7 @@ public class CatalogController {
     private final DataService dataService;
     @PostMapping("/crateCatalog")
     public ResponseEntity<?> crate(@RequestBody @Valid Catalog catalog, BindingResult bindingResult){
-        return dataService.crate(catalog, bindingResult);
+        return dataService.create(catalog, bindingResult);
     }
 
     @DeleteMapping("/deleteCatalog/{id}")
@@ -35,12 +35,12 @@ public class CatalogController {
 
     @PutMapping("/updateCatalogName/{id}")
     public ResponseEntity<?> changeName(@PathVariable Long id, @RequestParam String catalogName){
-        return dataService.changeName(id, catalogName, Catalog.class);
+        return dataService.updateName(id, catalogName, Catalog.class);
     }
 
     @PutMapping("/updateCatalogDescription/{id}")
     public ResponseEntity<?> changeDescriptionName(@PathVariable Long id, @RequestParam String descriptionName){
-        return dataService.changeDescriptionName(id, descriptionName);
+        return dataService.updateCatalogDescription(id, descriptionName);
     }
     @Autowired
     public CatalogController(DataService dataService) {

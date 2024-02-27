@@ -4,14 +4,16 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
 import org.example.bookcatalog.exception.InvalidRequestException;
+import org.example.bookcatalog.exception.UnsupportedEntityFieldException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Service
-public class SessionService {
+public class DataAccessService {
 
     private final EntityManager entityManager;
 
@@ -54,9 +56,44 @@ public class SessionService {
         }
     }
 
+    public <T> void validateEntity(Class<T> entityType) {
+        if(entityType == null){
+            throw new EntityNotFoundException("not found entity");
+        }
+    }
+
+    public <T> void checkingSupportFieldContract(Class<T> entityType, String fieldName) { // checking to support the entity contract by name of field
+        Field[] fields = entityType.getDeclaredFields();
+        boolean hasFieldName = false;
+
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
+                hasFieldName = true;
+                break;
+            }
+        }
+        if(!hasFieldName){
+            throw new UnsupportedEntityFieldException("Class " + entityType.getSimpleName() + " not found field " + fieldName);
+        }
+    }
+
+    public <T, B> void checkingSupportFieldTypeContract(Class<T> entityType, String fieldName, Class<B> type) { // checking to support the entity contract by type of field
+        Field[] fields = entityType.getDeclaredFields();
+        Class hasFieldType = null;
+
+        for (Field field : fields) {
+            if (field.getName().equals(fieldName)) {
+                hasFieldType = field.getType();
+                break;
+            }
+        }
+        if(hasFieldType != type){
+            throw new UnsupportedEntityFieldException("Type of " + fieldName + " field is not supported");
+        }
+    }
 
     @Autowired
-    public SessionService(EntityManagerFactory entityManagerFactory) {
+    public DataAccessService(EntityManagerFactory entityManagerFactory) {
         entityManager = entityManagerFactory.createEntityManager();
     }
 }

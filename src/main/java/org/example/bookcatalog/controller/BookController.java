@@ -15,7 +15,7 @@ public class BookController {
 
     @PostMapping("/addBook")
     public ResponseEntity<?> addBook(@RequestBody Book book, BindingResult bindingResult){
-        return dataService.crate(book, bindingResult);
+        return dataService.create(book, bindingResult);
     }
 
 

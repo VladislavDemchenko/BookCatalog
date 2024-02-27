@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
@@ -16,9 +15,9 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-public class DataService extends SessionService {
+public class DataService extends DataAccessService {
 
-    public <T> ResponseEntity<?> crate(T entity, BindingResult bindingResult){
+    public <T> ResponseEntity<?> create(T entity, BindingResult bindingResult){
         if (bindingResult.hasErrors()){
             return ResponseEntity.badRequest().body(bindingResult.getFieldError());
         }
@@ -26,7 +25,9 @@ public class DataService extends SessionService {
         return ResponseEntity.ok("Validation successful");
     }
 
+    
     public <T> ResponseEntity<?> delete(Long id, Class<T> entityType){
+        validateEntity(entityType);
         validId(id, entityType.getSimpleName());
         executeInTransaction((em) -> em.remove(em.find(entityType, id)));
         return ResponseEntity.ok("Validation successful");
@@ -34,12 +35,14 @@ public class DataService extends SessionService {
 
 
     public <T> ResponseEntity<?> findById(Long id, Class<T> entityType) {
+        validateEntity(entityType);
         validId(id, entityType.getSimpleName());
         return ResponseEntity.ok(executeInTransactionReturning((em) -> em.find(entityType, id)));
     }
 
+    
     public <T> ResponseEntity<?> findAll(Class<T> entityType) {
-
+        validateEntity(entityType);
         List<T> objects = executeInTransactionReturning((em) -> em.createQuery("select c from " + entityType.getSimpleName() + " c", entityType).getResultList());
 
         if (objects.isEmpty()) {
@@ -50,21 +53,24 @@ public class DataService extends SessionService {
     }
 
     public <T>ResponseEntity<?> findByName(String name, Class<T> entityType){
-
-        var catalog =  executeInTransactionReturning((em) -> {
+        validateEntity(entityType);
+        var entity =  executeInTransactionReturning((em) -> {
             return em.createQuery("select c from "+entityType.getSimpleName()+" c where c.name = :name")
                     .setParameter("name", name)
                     .getSingleResult();
         });
-        if(catalog == null){
+        if(entity == null){
             return ResponseEntity.noContent().build(); // 204 No Content
         } else {
-            return ResponseEntity.ok(catalog);
+            return ResponseEntity.ok(entity);
         }
     }
 
-    public <T> ResponseEntity<?> changeName(Long id, String newName, Class<T> entityType){
+    
+    public <T> ResponseEntity<?> updateName(Long id, String newName, Class<T> entityType){
+        validateEntity(entityType);
         validId(id, entityType);
+
         if(newName.isEmpty()){
             throw new InvalidRequestException("name of catalog can`t be empty");
         }
@@ -98,42 +104,23 @@ public class DataService extends SessionService {
         return ResponseEntity.ok("Validation successful");
     }
     
-    public ResponseEntity<?> changeDescriptionName(Long id, String descriptionName){ //Catalog method
+    
+    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
         validId(id, Catalog.class);
-        if(Objects.equals(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription(), descriptionName)){
+        if(Objects.equals(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription(), newDescription)){
             throw new InvalidRequestException("this description is already exist");
         }
-        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(descriptionName));
+        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
         return ResponseEntity.ok("Validation successful");
     }
 
-
-
-
-    public DataService(EntityManagerFactory entityManagerFactory) {
-        super(entityManagerFactory);
-    }
-
+    
 
     public <T> ResponseEntity<?> sortByName(Class<T> entityType){
-        if(entityType == null){
-            throw new EntityNotFoundException("not found entity");
-        }
+        validateEntity(entityType);
 
-        Field[] fields = entityType.getDeclaredFields();
-        boolean hasNameField = false;
-
-        // Перевірка кожного поля на співпадіння з ім'ям "name"
-        for (Field field : fields) {
-            if (field.getName().equals("name")) {
-                hasNameField = true;
-                break;
-            }
-        }
-
-        if (!hasNameField) {
-            throw new IllegalArgumentException("Class " + entityType.getSimpleName() + " not found field name");
-        }
+        checkingSupportFieldContract(entityType, "name");
+        checkingSupportFieldTypeContract(entityType, "name", String.class);
 
         executeInTransaction((em) ->{
             em.createQuery("select e from " + entityType.getSimpleName() + " e order by e.name");
@@ -141,11 +128,13 @@ public class DataService extends SessionService {
         return ResponseEntity.ok("Validation successful");
     }
 
-
+    
+    
     public <T> ResponseEntity<?> sortByLastUpdate(Class<T> entityType){
-        if(entityType == null){
-            throw new EntityNotFoundException("not found entity");
-        }
+        validateEntity(entityType);
+
+        checkingSupportFieldContract(entityType, "creationDate");
+        checkingSupportFieldTypeContract(entityType, "creationDate", LocalDateTime.class);
 
         List<T> object = executeInTransactionReturning((em) -> em.createQuery("SELECT e FROM " + entityType.getSimpleName() + " e ORDER BY e.creationDate DESC", entityType).getResultList());
 
@@ -154,5 +143,9 @@ public class DataService extends SessionService {
         } else {
             return ResponseEntity.ok("Validation successful");
         }
+    }
+
+    public DataService(EntityManagerFactory entityManagerFactory) {
+        super(entityManagerFactory);
     }
 }
