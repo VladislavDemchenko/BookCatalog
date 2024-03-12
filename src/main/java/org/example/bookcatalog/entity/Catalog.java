@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.validator.constraints.UniqueElements;
 import org.springframework.stereotype.Repository;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "catalogs")
+@Builder
 @Setter
 @Getter
 @NoArgsConstructor
@@ -22,18 +25,21 @@ import java.util.List;
 public class Catalog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "catalog")
+    @SequenceGenerator(name = "catalog", sequenceName = "catalog_seq", allocationSize = 1)
     private Long id;
 
     private LocalDateTime creationDate;
 
-    @NotNull(message = "field Catalog.name can`t be null")
-    @NotEmpty(message = "field Catalog.name can`t be empty")
-    @Column(name = "catalogName", nullable = false)
+    @NotNull(message = "field Catalog.name cannot be null")
+    @NotEmpty(message = "field Catalog.name cannot be empty")
+    @Column(name = "catalogName", unique = true)
     private String name;
 
     private String description;
 
     @OneToMany(mappedBy = "catalog", cascade = CascadeType.ALL)
     private List<Book> books = new ArrayList<>();
+
+
 }

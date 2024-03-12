@@ -1,9 +1,9 @@
 package org.example.bookcatalog.service;
 
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityNotFoundException;
-import org.example.bookcatalog.entity.Catalog;
+import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.exception.InvalidRequestException;
+import org.example.bookcatalog.exception.UnsupportedContractException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
@@ -17,32 +17,35 @@ import java.util.Objects;
 @Service
 public class DataService extends DataAccessService {
 
-    public <T> ResponseEntity<?> create(T entity, BindingResult bindingResult){
-        if (bindingResult.hasErrors()){
+    public <T,B> ResponseEntity<?> create(T entity, FieldDto<B> fieldDto, BindingResult bindingResult){
+        checkingUniqueValue(entity, fieldDto);
+        validateEntity(entity); // not use when we have annotation @Valid under entity
+
+        if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldError());
         }
+        updateCreationDate(entity);
         executeInTransaction((em) -> em.persist(entity));
         return ResponseEntity.ok("Validation successful");
+
     }
+
 
     
     public <T> ResponseEntity<?> delete(Long id, Class<T> entityType){
-        validateEntity(entityType);
-        validId(id, entityType.getSimpleName());
+        validId(id, entityType);
         executeInTransaction((em) -> em.remove(em.find(entityType, id)));
         return ResponseEntity.ok("Validation successful");
     }
 
 
     public <T> ResponseEntity<?> findById(Long id, Class<T> entityType) {
-        validateEntity(entityType);
-        validId(id, entityType.getSimpleName());
+        validId(id, entityType);
         return ResponseEntity.ok(executeInTransactionReturning((em) -> em.find(entityType, id)));
     }
 
     
     public <T> ResponseEntity<?> findAll(Class<T> entityType) {
-        validateEntity(entityType);
         List<T> objects = executeInTransactionReturning((em) -> em.createQuery("select c from " + entityType.getSimpleName() + " c", entityType).getResultList());
 
         if (objects.isEmpty()) {
@@ -53,7 +56,6 @@ public class DataService extends DataAccessService {
     }
 
     public <T>ResponseEntity<?> findByName(String name, Class<T> entityType){
-        validateEntity(entityType);
         var entity =  executeInTransactionReturning((em) -> {
             return em.createQuery("select c from "+entityType.getSimpleName()+" c where c.name = :name")
                     .setParameter("name", name)
@@ -68,9 +70,7 @@ public class DataService extends DataAccessService {
 
     
     public <T> ResponseEntity<?> updateName(Long id, String newName, Class<T> entityType){
-        validateEntity(entityType);
         validId(id, entityType);
-
         if(newName.isEmpty()){
             throw new InvalidRequestException("name of catalog can`t be empty");
         }
@@ -80,9 +80,7 @@ public class DataService extends DataAccessService {
 
         executeInTransaction((em) -> { // check for setter into an object and rename field
             T currentEntity = em.find(entityType, id);
-            if (currentEntity == null) {
-                throw new EntityNotFoundException("Object with id: " + id + " not found");
-            }
+            validateEntity(currentEntity);
 
             try {
                 Method setNameMethod = entityType.getMethod("setName", String.class);
@@ -91,13 +89,7 @@ public class DataService extends DataAccessService {
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 throw new UnsupportedOperationException("Renaming is not supported for an object of type " + entityType.getSimpleName());
             }
-
-            try {
-                Method setCreationDateMethod = entityType.getMethod("setCreationDate", LocalDateTime.class);
-                setCreationDateMethod.invoke(currentEntity, LocalDateTime.now());
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new UnsupportedOperationException("Updating the creation date is not supported for an object of type " + entityType.getSimpleName());
-            }
+            updateCreationDate(currentEntity);
             em.merge(currentEntity);
         });
 
@@ -105,22 +97,21 @@ public class DataService extends DataAccessService {
     }
     
     
-    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
-        validId(id, Catalog.class);
-        if(Objects.equals(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription(), newDescription)){
-            throw new InvalidRequestException("this description is already exist");
-        }
-        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
-        return ResponseEntity.ok("Validation successful");
-    }
+//    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
+//        validId(id, Catalog.class);
+//        if(Objects.equals(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription(), newDescription)){
+//            throw new InvalidRequestException("this description is already exist");
+//        }
+//        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
+//        return ResponseEntity.ok("Validation successful");
+//    }
 
     
 
     public <T> ResponseEntity<?> sortByName(Class<T> entityType){
-        validateEntity(entityType);
-
-        checkingSupportFieldContract(entityType, "name");
-        checkingSupportFieldTypeContract(entityType, "name", String.class);
+        if(!checkingSupportFieldContract(entityType, new FieldDto<String>("name"))){
+            throw new UnsupportedContractException("Unsupported name field contract exception in " + entityType + " class");
+        }
 
         executeInTransaction((em) ->{
             em.createQuery("select e from " + entityType.getSimpleName() + " e order by e.name");
@@ -133,8 +124,9 @@ public class DataService extends DataAccessService {
     public <T> ResponseEntity<?> sortByLastUpdate(Class<T> entityType){
         validateEntity(entityType);
 
-        checkingSupportFieldContract(entityType, "creationDate");
-        checkingSupportFieldTypeContract(entityType, "creationDate", LocalDateTime.class);
+        if(!checkingSupportFieldContract(entityType, new FieldDto<LocalDateTime>("creationDate"))){
+            throw new UnsupportedContractException("Unsupported creationDate field contract exception in " + entityType + " class");
+        }
 
         List<T> object = executeInTransactionReturning((em) -> em.createQuery("SELECT e FROM " + entityType.getSimpleName() + " e ORDER BY e.creationDate DESC", entityType).getResultList());
 
@@ -148,4 +140,6 @@ public class DataService extends DataAccessService {
     public DataService(EntityManagerFactory entityManagerFactory) {
         super(entityManagerFactory);
     }
+
+
 }

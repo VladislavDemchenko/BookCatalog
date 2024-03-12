@@ -1,0 +1,38 @@
+
+POST /catalogs/crate HTTP/1.1
+Host: yourapi.com
+Content-Type: application/json
+Accept: application/json
+
+{
+"name": "Назва каталогу",
+"description": "Опис каталогу"
+}
+
+
+### POST user in db
+POST http://localhost:8080/catalogs/create
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "test",
+  "description": "q"
+}
+
+###
+POST http://localhost:8080/books/create
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "some",
+  "catalog": {
+    "id": 1
+  }
+}
+
+###
+DELETE http://localhost:8080/catalogs/delete/16
+Content-Type: application/json
+

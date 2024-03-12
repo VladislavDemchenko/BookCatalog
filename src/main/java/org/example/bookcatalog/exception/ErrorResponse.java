@@ -1,4 +1,4 @@
-package org.example.bookcatalog.controller.controllerAdvice;
+package org.example.bookcatalog.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

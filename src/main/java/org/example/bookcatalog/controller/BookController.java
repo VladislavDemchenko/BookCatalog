@@ -8,12 +8,12 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(name = "/books")
+@RequestMapping(value = "/books")
 public class BookController {
 
     private final DataService dataService;
 
-    @PostMapping("/addBook")
+    @PostMapping("/create")
     public ResponseEntity<?> addBook(@RequestBody Book book, BindingResult bindingResult){
         return dataService.create(book, bindingResult);
     }
