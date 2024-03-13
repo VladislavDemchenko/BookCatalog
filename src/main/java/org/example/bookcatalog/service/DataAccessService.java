@@ -1,9 +1,6 @@
 package org.example.bookcatalog.service;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.*;
 import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,28 +57,56 @@ public class DataAccessService {
 
     public <T> void validateEntity(T entity) {
         if(entity == null){
-            throw new EntityNotFoundException("not found entity");
+            throw new EntityNotFoundException("Not found entity");
         }
     }
 
-    public <T, B> void checkingUniqueValue(T entity, FieldDto<B> fieldDto){ ///////подумати альтернативу, бо такий спосіб череват купою помилок
+    public <T,B> void checkingValueUnique(T entity, FieldDto<B> fieldDto){
+        try {
+            Object fieldValue = getFieldGetter(entity, fieldDto).invoke(entity);
+            if (isFieldUnique(entity, fieldDto)) {
+                Long count = executeInTransactionReturning(em -> {
+                    Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") FROM " + entity.getClass().getSimpleName() + " u WHERE u." + fieldDto.getFieldName() + " = :name");
+                    request.setParameter("name", fieldValue);
+                    return (Long) request.getSingleResult();
+                });
+                if (count > 1) {
+                    throw new InvalidRequestException("This field name \"" + fieldValue + "\" already exists");
+                }
+            }
+        }catch(IllegalAccessException | InvocationTargetException e){
+            throw new InvalidRequestException("Access or method call error "+ e.getMessage());
+        }catch (NoResultException e){
+            throw new InvalidRequestException("Not found result "+e.getMessage());
+        }
+    }
+
+    public <T, B> boolean isFieldUnique(T entity, FieldDto<B> fieldDto){ ///////подумати альтернативу, бо такий спосіб череват купою помилок
         checkingSupportFieldContract(entity.getClass(), fieldDto);
         boolean isUnique = false;
+        Long count = 0L;
         try {
-            Object method = entity.getClass().getMethod("get" + fieldDto.getFieldName()).invoke(entity);
+
             Field field = entity.getClass().getDeclaredField(fieldDto.getFieldName());
             Column annotation = field.getAnnotation(Column.class);
             if (annotation != null){
                  isUnique = annotation.unique();
-            }else {
-//                executeInTransactionReturning(em -> em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") FROM " + entity.getClass().getSimpleName() + " u WHERE u." + fieldDto.getFieldName() + " = :name")
-//                        .setParameter(fieldDto.getFieldName(), method.invoke(entity)));
             }
-        }catch (NoSuchMethodException | NoSuchFieldException | IllegalAccessException | InvocationTargetException e){
-            e.getStackTrace();
+
+            return isUnique;
+        }catch (NoSuchFieldException e){
+            throw new UnsupportedOperationException();
         }
     }
 
+
+    public <T,B> Method getFieldGetter(T entity, FieldDto<B> fieldDto){ // returning a getter for special field
+        try {
+            return entity.getClass().getMethod("get" + fieldDto.getFieldName());
+        }catch (NoSuchMethodException e){
+          throw new UnsupportedOperationException("Not found getter from "+entity.getClass().getSimpleName()+" for field "+fieldDto.getFieldName());
+        }
+    }
 
 
     public <T> void checkingSupportMethodContract(Class<T> entityType){
@@ -122,7 +147,7 @@ public class DataAccessService {
 //        }
 //    }
 
-    public <T> void updateCreationDate(T entity) {
+    public <T> void validateAndUpdateCreationDate(T entity) {
         try {
             Method getCreationDateMethod = entity.getClass().getMethod("getCreationDate");
             Method setCreationDateMethod = entity.getClass().getMethod("setCreationDate", LocalDateTime.class);

@@ -18,13 +18,13 @@ import java.util.Objects;
 public class DataService extends DataAccessService {
 
     public <T,B> ResponseEntity<?> create(T entity, FieldDto<B> fieldDto, BindingResult bindingResult){
-        checkingUniqueValue(entity, fieldDto);
         validateEntity(entity); // not use when we have annotation @Valid under entity
+        checkingValueUnique(entity, fieldDto);
 
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldError());
         }
-        updateCreationDate(entity);
+        validateAndUpdateCreationDate(entity);
         executeInTransaction((em) -> em.persist(entity));
         return ResponseEntity.ok("Validation successful");
 
@@ -89,7 +89,7 @@ public class DataService extends DataAccessService {
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 throw new UnsupportedOperationException("Renaming is not supported for an object of type " + entityType.getSimpleName());
             }
-            updateCreationDate(currentEntity);
+            validateAndUpdateCreationDate(currentEntity);
             em.merge(currentEntity);
         });
 
