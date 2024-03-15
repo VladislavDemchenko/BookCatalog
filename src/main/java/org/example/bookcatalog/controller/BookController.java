@@ -1,5 +1,6 @@
 package org.example.bookcatalog.controller;
 
+import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.service.DataService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ public class BookController {
 
     @PostMapping("/create")
     public ResponseEntity<?> addBook(@RequestBody Book book, BindingResult bindingResult){
-        return dataService.create(book, bindingResult);
+        return dataService.create(book,new FieldDto<String>("name"), bindingResult);
     }
 
 

@@ -1,7 +1,10 @@
 package org.example.bookcatalog.service;
 
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.RollbackException;
 import org.example.bookcatalog.dto.FieldDto;
+import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.example.bookcatalog.exception.UnsupportedContractException;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +27,10 @@ public class DataService extends DataAccessService {
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldError());
         }
+
         validateAndUpdateCreationDate(entity);
         executeInTransaction((em) -> em.persist(entity));
+
         return ResponseEntity.ok("Validation successful");
 
     }
@@ -55,32 +60,32 @@ public class DataService extends DataAccessService {
         }
     }
 
-    public <T>ResponseEntity<?> findByName(String name, Class<T> entityType){
-        var entity =  executeInTransactionReturning((em) -> {
-            return em.createQuery("select c from "+entityType.getSimpleName()+" c where c.name = :name")
-                    .setParameter("name", name)
-                    .getSingleResult();
-        });
-        if(entity == null){
-            return ResponseEntity.noContent().build(); // 204 No Content
-        } else {
-            return ResponseEntity.ok(entity);
-        }
+    public <T> ResponseEntity<?> findByName(String name, Class<T> entityType){
+            var entity = executeInTransactionReturning((em) -> {
+                try {
+                    return em.createQuery("select c from " + entityType.getSimpleName() + " c where c.name = :name")
+                            .setParameter("name", name)
+                            .getSingleResult();
+                }catch (NoResultException e){
+                    throw new InvalidRequestException("Not found current name");
+                }
+            });
+        return ResponseEntity.ok(entity);
     }
 
-    
-    public <T> ResponseEntity<?> updateName(Long id, String newName, Class<T> entityType){
+
+
+    public <T,B> ResponseEntity<?> updateName(Long id, String newName, FieldDto<B> fieldDto, Class<T> entityType){
         validId(id, entityType);
         if(newName.isEmpty()){
             throw new InvalidRequestException("name of catalog can`t be empty");
         }
-        if(Objects.equals(executeInTransactionReturning((em) -> em.find(entityType, id)).getClass().getName(), newName)){
-            throw new InvalidRequestException("this name catalog is already exist");
-        }
+
+        /////////////////////////////////////////////////////////////
+        checkingValueUnique(executeInTransactionReturning(em -> em.find(Catalog.class, id)), fieldDto);
 
         executeInTransaction((em) -> { // check for setter into an object and rename field
             T currentEntity = em.find(entityType, id);
-            validateEntity(currentEntity);
 
             try {
                 Method setNameMethod = entityType.getMethod("setName", String.class);

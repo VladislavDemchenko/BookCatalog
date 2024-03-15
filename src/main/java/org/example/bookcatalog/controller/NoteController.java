@@ -1,5 +1,6 @@
 package org.example.bookcatalog.controller;
 
+import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.entity.Note;
 import org.example.bookcatalog.service.DataService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ public class NoteController {
     private final DataService dataService;
     @PostMapping("/addNote")
     public ResponseEntity<?> addNote(@RequestBody Note userNote, BindingResult bindingResult){
-        return dataService.create(userNote, bindingResult);
+        return dataService.create(userNote, new FieldDto<>(), bindingResult);
     }
 
     @DeleteMapping("/deleteNote/{id}")
@@ -23,7 +24,7 @@ public class NoteController {
 
     @PutMapping("/updateNote/{id}")
     public ResponseEntity<?> changeNote(@PathVariable Long id, @RequestParam String descriptionName){
-        return dataService.updateName(id, descriptionName, Note.class);
+        return dataService.updateName(id, descriptionName,new FieldDto<String>("name"), Note.class);
     }
 
     @GetMapping("/getNote/{id}")

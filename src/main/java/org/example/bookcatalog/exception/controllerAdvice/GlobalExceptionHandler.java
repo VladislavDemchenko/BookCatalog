@@ -1,6 +1,7 @@
 package org.example.bookcatalog.exception.controllerAdvice;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.NoResultException;
 import org.example.bookcatalog.exception.ErrorResponse;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.example.bookcatalog.exception.UnsupportedContractException;
@@ -36,7 +37,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
     }
 
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(NoResultException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequestException(RuntimeException ex) {
         ErrorResponse errorResponse = new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -31,9 +31,9 @@ public class DataAccessService {
             var result = entityManagerFunction.apply(entityManager);
             entityManager.getTransaction().commit();
             return result;
-        }catch (RuntimeException e){
+        }catch (NoResultException e){
             entityManager.getTransaction().rollback();
-            throw e;
+            throw new NoResultException(e.getMessage());
         }
     }
 
@@ -70,8 +70,8 @@ public class DataAccessService {
                     request.setParameter("name", fieldValue);
                     return (Long) request.getSingleResult();
                 });
-                if (count > 1) {
-                    throw new InvalidRequestException("This field name \"" + fieldValue + "\" already exists");
+                if (count > 0) {
+                    throw new InvalidRequestException("This field name " + fieldValue + " already exists");
                 }
             }
         }catch(IllegalAccessException | InvocationTargetException e){
@@ -81,18 +81,14 @@ public class DataAccessService {
         }
     }
 
-    public <T, B> boolean isFieldUnique(T entity, FieldDto<B> fieldDto){ ///////подумати альтернативу, бо такий спосіб череват купою помилок
-        checkingSupportFieldContract(entity.getClass(), fieldDto);
+    public <T, B> boolean isFieldUnique(T entity, FieldDto<B> fieldDto){
         boolean isUnique = false;
-        Long count = 0L;
         try {
-
             Field field = entity.getClass().getDeclaredField(fieldDto.getFieldName());
             Column annotation = field.getAnnotation(Column.class);
             if (annotation != null){
                  isUnique = annotation.unique();
             }
-
             return isUnique;
         }catch (NoSuchFieldException e){
             throw new UnsupportedOperationException();
@@ -102,7 +98,8 @@ public class DataAccessService {
 
     public <T,B> Method getFieldGetter(T entity, FieldDto<B> fieldDto){ // returning a getter for special field
         try {
-            return entity.getClass().getMethod("get" + fieldDto.getFieldName());
+            String getterName = "get" + Character.toUpperCase(fieldDto.getFieldName().charAt(0)) + fieldDto.getFieldName().substring(1);
+            return entity.getClass().getMethod(getterName);
         }catch (NoSuchMethodException e){
           throw new UnsupportedOperationException("Not found getter from "+entity.getClass().getSimpleName()+" for field "+fieldDto.getFieldName());
         }

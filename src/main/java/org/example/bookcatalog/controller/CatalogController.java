@@ -43,7 +43,7 @@ public class CatalogController {
 
     @PutMapping("/updateName/{id}")
     public ResponseEntity<?> changeName(@PathVariable Long id, @RequestParam String catalogName){
-        return dataService.updateName(id, catalogName, Catalog.class);
+        return dataService.updateName(id, catalogName, new FieldDto<String>("name"), Catalog.class);
     }
 //    @PutMapping("/updateDescription/{id}")
 //    public ResponseEntity<?> changeDescriptionName(@PathVariable Long id, @RequestParam String descriptionName){
