@@ -81,8 +81,7 @@ public class DataService extends DataAccessService {
             throw new InvalidRequestException("name of catalog can`t be empty");
         }
 
-        /////////////////////////////////////////////////////////////
-        checkingValueUnique(executeInTransactionReturning(em -> em.find(Catalog.class, id)), fieldDto);
+        checkingValueUnique(executeInTransactionReturning(em -> em.find(entityType, id)), fieldDto);
 
         executeInTransaction((em) -> { // check for setter into an object and rename field
             T currentEntity = em.find(entityType, id);

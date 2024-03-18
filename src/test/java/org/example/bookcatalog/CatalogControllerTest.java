@@ -57,7 +57,7 @@ public class CatalogControllerTest {
         catalogController = new CatalogController(dataService);
         MockitoAnnotations.initMocks(this);
     }
-//    @After
+    @After
     public void cleaningDB(){
         try {
             dataService.delete(findIdByName(), Catalog.class);
@@ -94,10 +94,12 @@ public class CatalogControllerTest {
     @Test(expected = InvalidRequestException.class)
     public void testCreateCatalog_HasErrors_BAD_REQUEST_UniqueValue(){
         // Arrange
-        catalogController.create(catalog, bindingResult);
+        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
+        Catalog catalog1 = Catalog.builder().name("catalog").build();
 
         //Act
-        catalogController.create(catalog, bindingResult);
+        catalogController.create(catalog1, bindingResult);
+
     }
 
     @Test
@@ -151,12 +153,10 @@ public class CatalogControllerTest {
     @Test
     public void testFindAllCatalogs_Successful(){
         // Arrange
-        catalog.setName("first catalog");
         dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
 
         // Act
         ResponseEntity<?> response = catalogController.findAll();
-        System.out.println(response);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -174,13 +174,15 @@ public class CatalogControllerTest {
 
     @Test
     public void testChangeNameCatalog_Successful(){
+
         //Arrange
-        String newName = "newCatalogName";
-        dataAccessService.executeInTransaction(em -> em.persist(catalog));
-        System.out.println("persist done");
+        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
         Long id = catalog.getId();
+        catalog.setName("newCatalogName");
+
         //Act
-        ResponseEntity<?> response = catalogController.changeName(id, newName);
+        ResponseEntity<?> response = catalogController.changeName(id, "newCatalogName");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     private Long findIdByName() {
