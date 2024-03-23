@@ -63,10 +63,10 @@ public class DataAccessService {
 
     public <T,B> void checkingValueUnique(T entity, FieldDto<B> fieldDto){
         try {
-            Object fieldValue = getFieldGetter(entity, fieldDto).invoke(entity);
-            Object idFieldValue = getFieldGetter(entity, new FieldDto<Long>("id")).invoke(entity);
-            Long count = 0L;
             if (isFieldUnique(entity, fieldDto)) {
+                Object fieldValue = getFieldGetter(entity, fieldDto).invoke(entity);
+                Object idFieldValue = getFieldGetter(entity, new FieldDto<Long>("id")).invoke(entity);
+                Long count = 0L;
                 if(idFieldValue != null) {
                     count = executeInTransactionReturning(em -> {
                         Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") " +

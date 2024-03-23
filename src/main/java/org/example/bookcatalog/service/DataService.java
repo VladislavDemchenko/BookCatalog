@@ -78,7 +78,7 @@ public class DataService extends DataAccessService {
     public <T,B> ResponseEntity<?> updateName(Long id, String newName, FieldDto<B> fieldDto, Class<T> entityType){
         validId(id, entityType);
         if(newName.isEmpty()){
-            throw new InvalidRequestException("name of catalog can`t be empty");
+            throw new InvalidRequestException("New name of field (" + fieldDto.getFieldName() + ") can`t be empty");
         }
 
         checkingValueUnique(executeInTransactionReturning(em -> em.find(entityType, id)), fieldDto);
