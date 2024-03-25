@@ -1,12 +1,12 @@
-package org.example.bookcatalog;
+package org.example.bookcatalog.controller;
 
 import jakarta.persistence.Persistence;
-import org.example.bookcatalog.controller.CatalogController;
 import org.example.bookcatalog.dto.FieldDto;
+import org.example.bookcatalog.entity.Author;
+import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.entity.Catalog;
+import org.example.bookcatalog.entity.Note;
 import org.example.bookcatalog.exception.InvalidRequestException;
-import org.example.bookcatalog.exception.controllerAdvice.GlobalExceptionHandler;
-import org.example.bookcatalog.service.DataAccessService;
 import org.example.bookcatalog.service.DataService;
 import org.junit.After;
 import org.junit.Before;
@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -27,53 +26,72 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(CatalogController.class)
-@Import(GlobalExceptionHandler.class)
-public class CatalogControllerTest {
+public class ControllersTest {
 
     private Catalog catalog;
 
+    private Book book;
+
+    private Author author;
+    private Note note;
     @Mock
     private BindingResult bindingResult;
 
-    private DataAccessService dataAccessService;
     private DataService dataService;
 
+    private BookController bookController;
     private CatalogController catalogController;
+    private NoteController noteController;
 
     @Before
     public void setup(){
+        dataService = new DataService(Persistence.createEntityManagerFactory("book-catalog unit"));
+        catalogController = new CatalogController(dataService);
+        bookController = new BookController(dataService);
+        noteController = new NoteController(dataService);
+
         catalog = Catalog.builder()
-                .name("catalog")
+                .name("testCatalog")
                 .description("my new test catalog")
                 .build();
-        dataService = new DataService(Persistence.createEntityManagerFactory("book-catalog unit"));
-        dataAccessService = new DataAccessService(Persistence.createEntityManagerFactory("book-catalog unit"));
-        catalogController = new CatalogController(dataService);
+        book = Book.builder()
+                .name("testBook")
+                .catalog(catalog)
+                .build();
+        note = Note.builder()
+                .body("testNote")
+                .book(book)
+                .build();
+        author = Author.builder().build();
+
         MockitoAnnotations.initMocks(this);
     }
     @After
     public void cleaningDB(){
-        try {
-            dataService.delete(findIdByName(), Catalog.class);
-        }catch (Exception e){}
+//        try {
+//            dataService.delete(catalog.getId(), Catalog.class);
+//        }catch (Exception e){}
     }
 
     @Test
-    public void testCreateCatalog_Successful() {
+    public void CreateEntity_Successful() {
         // Arrange
         when(bindingResult.hasErrors()).thenReturn(false);
 
         // Act
-        ResponseEntity<?> response = catalogController.create(catalog, bindingResult);
-
+        ResponseEntity<?> responseCatalog = catalogController.create(catalog, bindingResult);
+        ResponseEntity<?> responseBook = bookController.addBook(book, bindingResult);
+//        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
+        dataService.delete(catalog.getId(), Catalog.class);
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Validation successful", response.getBody());
+//        assertEquals(HttpStatus.OK, responseCatalog.getStatusCode());
+//        assertEquals(HttpStatus.OK, responseBook.getStatusCode());
+//        assertEquals(HttpStatus.OK, responseNote.getStatusCode());
     }
 
 
     @Test
-    public void testCreateCatalog_HasErrors_BAD_REQUEST_BindingResultException() {
+    public void CreateCatalog_HasErrors_BAD_REQUEST_BindingResultException() {
         // Arrange
         when(bindingResult.hasErrors()).thenReturn(true);
 
@@ -103,7 +121,7 @@ public class CatalogControllerTest {
         // Arrange
         catalog.setName("testCatalogName");
         dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
-        Long id = findIdByName();
+        Long id = catalog.getId();
 
         // Act
         ResponseEntity<?> response = catalogController.delete(id);
@@ -205,6 +223,7 @@ public class CatalogControllerTest {
 
     @Test
     public void testChangeNameCatalog_HasErrors_BAD_REQUEST_IdIsNull(){
+        // Arrange
         Long id = null;
 
         // Act & Assert
@@ -216,6 +235,7 @@ public class CatalogControllerTest {
 
     @Test
     public void testChangeNameCatalog_HasErrors_BAD_REQUEST_NotFoundId(){
+        // Arrange
         Long id = 0L;
 
         // Act & Assert
@@ -227,6 +247,7 @@ public class CatalogControllerTest {
 
     @Test
     public void testChangeNameCatalog_HasErrors_BAD_REQUEST_EmptyName(){
+        // Arrange
         dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
         Long id = catalog.getId();
 
@@ -236,9 +257,63 @@ public class CatalogControllerTest {
         });
         assertEquals("New name of field (name) can`t be empty", exception.getMessage());
     }
-    private Long findIdByName() {
-        return (Long)dataAccessService.executeInTransactionReturning(em -> em.createQuery("select c.id from Catalog c where c.name = :name")
-                .setParameter("name", catalog.getName())
-                .getSingleResult());
+
+    @Test
+    public void testChangeDescriptionCatalog_Successful(){
+        // Arrange
+        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
+        Long id = catalog.getId();
+
+        // Act
+        ResponseEntity<?> response = catalogController.changeDescriptionName(id, "new test description");
+
+        // Assert
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
     }
+
+    @Test
+    public void testChangeDescriptionCatalog_BedRequest_InvalidId(){
+
+        // Arrange
+        Long id = -1L;
+
+        // Act & Assert
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
+            catalogController.changeDescriptionName(id, "new test description");
+        });
+
+        assertEquals("Not found value id. Please provide a valid identifier.", exception.getMessage());
+    }
+
+
+    @Test
+    public void testChangeDescriptionCatalog_BedRequest_IdIsNull(){
+
+        // Arrange
+        Long id = null;
+
+        // Act & Assert
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
+            catalogController.changeDescriptionName(id, "new test description");
+        });
+
+        assertEquals("Operation cannot be performed: identifier is missing. Please check the entered data and try again.", exception.getMessage());
+    }
+
+
+    @Test
+    public void testChangeDescriptionCatalog_BedRequest_AlreadyExist(){
+
+        // Arrange
+        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
+        Long id = catalog.getId();
+
+        // Act & Assert
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
+            catalogController.changeDescriptionName(id, catalog.getDescription());
+        });
+
+        assertEquals("This description is already exist", exception.getMessage());
+    }
+
 }

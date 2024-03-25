@@ -101,14 +101,14 @@ public class DataService extends DataAccessService {
     }
     
     
-//    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
-//        validId(id, Catalog.class);
-//        if(Objects.equals(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription(), newDescription)){
-//            throw new InvalidRequestException("this description is already exist");
-//        }
-//        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
-//        return ResponseEntity.ok("Validation successful");
-//    }
+    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
+        validId(id, Catalog.class);
+        if(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription().equals(newDescription)){
+            throw new InvalidRequestException("This description is already exist");
+        }
+        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
+        return ResponseEntity.ok("Validation successful");
+    }
 
     
 

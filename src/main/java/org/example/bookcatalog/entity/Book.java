@@ -15,16 +15,18 @@ import java.util.List;
 @Table(name = "books")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Book {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "book")
+    @SequenceGenerator(name = "book", sequenceName = "book_seq", allocationSize = 1)
     private Long id;
 
     @NotNull(message = "field Book.name can`t be null")
-    @NotEmpty
-    @Column(nullable = false, unique = true)
+    @NotEmpty(message = "field Book.name can`t be empty")
+    @Column(unique = true)
     private String name;
 
     private String body;
@@ -38,7 +40,7 @@ public class Book {
 
     @Setter(value = AccessLevel.PRIVATE)
     @ManyToMany(mappedBy = "books", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<Author> author = new ArrayList<>();
+    private List<Author> authors = new ArrayList<>();
 
     @ManyToOne(optional = false) // book can`t be without catalog
     @JoinColumn(name = "catalog_fk")

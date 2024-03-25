@@ -12,6 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "authors")
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor

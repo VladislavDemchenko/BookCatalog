@@ -1,5 +1,9 @@
 package org.example.bookcatalog;
 
+import jakarta.persistence.Persistence;
+import org.example.bookcatalog.entity.Book;
+import org.example.bookcatalog.entity.Catalog;
+import org.example.bookcatalog.service.DataAccessService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
