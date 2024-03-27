@@ -38,7 +38,7 @@ public class Catalog {
 
     private String description;
 
-    @OneToMany(mappedBy = "catalog", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "catalog", cascade = CascadeType.REMOVE)
     private List<Book> books = new ArrayList<>();
 
 

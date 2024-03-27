@@ -23,7 +23,6 @@ public class DataService extends DataAccessService {
     public <T,B> ResponseEntity<?> create(T entity, FieldDto<B> fieldDto, BindingResult bindingResult){
         validateEntity(entity); // not use when we have annotation @Valid under entity
         checkingValueUnique(entity, fieldDto);
-
         if (bindingResult.hasErrors()) {
             return ResponseEntity.badRequest().body(bindingResult.getFieldError());
         }
@@ -39,7 +38,7 @@ public class DataService extends DataAccessService {
     
     public <T> ResponseEntity<?> delete(Long id, Class<T> entityType){
         validId(id, entityType);
-        executeInTransaction((em) -> em.remove(em.find(entityType, id)));
+        executeInTransaction(em -> em.remove(em.find(entityType, id)));
         return ResponseEntity.ok("Validation successful");
     }
 

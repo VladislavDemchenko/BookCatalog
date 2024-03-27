@@ -7,6 +7,7 @@ import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.entity.Note;
 import org.example.bookcatalog.exception.InvalidRequestException;
+import org.example.bookcatalog.service.DataAccessService;
 import org.example.bookcatalog.service.DataService;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +38,7 @@ public class ControllersTest {
     @Mock
     private BindingResult bindingResult;
 
+    private DataAccessService dataAccessService;
     private DataService dataService;
 
     private BookController bookController;
@@ -46,6 +48,7 @@ public class ControllersTest {
     @Before
     public void setup(){
         dataService = new DataService(Persistence.createEntityManagerFactory("book-catalog unit"));
+        dataAccessService = new DataAccessService(Persistence.createEntityManagerFactory("book-catalog unit"));
         catalogController = new CatalogController(dataService);
         bookController = new BookController(dataService);
         noteController = new NoteController(dataService);
@@ -68,52 +71,63 @@ public class ControllersTest {
     }
     @After
     public void cleaningDB(){
-//        try {
+        try {
+             dataAccessService.executeInTransaction(em -> em.remove(em.find(catalog.getClass(), catalog.getId())));
 //            dataService.delete(catalog.getId(), Catalog.class);
-//        }catch (Exception e){}
+        }catch (Exception e){}
     }
 
     @Test
-    public void CreateEntity_Successful() {
+    public void createEntity_Successful() {
         // Arrange
         when(bindingResult.hasErrors()).thenReturn(false);
 
         // Act
         ResponseEntity<?> responseCatalog = catalogController.create(catalog, bindingResult);
         ResponseEntity<?> responseBook = bookController.addBook(book, bindingResult);
-//        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
-        dataService.delete(catalog.getId(), Catalog.class);
+        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
+
         // Assert
-//        assertEquals(HttpStatus.OK, responseCatalog.getStatusCode());
-//        assertEquals(HttpStatus.OK, responseBook.getStatusCode());
-//        assertEquals(HttpStatus.OK, responseNote.getStatusCode());
+        assertEquals(HttpStatus.OK, responseCatalog.getStatusCode());
+        assertEquals(HttpStatus.OK, responseBook.getStatusCode());
+        assertEquals(HttpStatus.OK, responseNote.getStatusCode());
     }
 
 
     @Test
-    public void CreateCatalog_HasErrors_BAD_REQUEST_BindingResultException() {
+    public void createEntity_HasErrors_BAD_REQUEST_BindingResultException() {
         // Arrange
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act
-        ResponseEntity<?> response = catalogController.create(catalog, bindingResult);
+        ResponseEntity<?> responseCatalog = catalogController.create(catalog, bindingResult);
+        ResponseEntity<?> responseBook = bookController.addBook(book, bindingResult);
+        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        verify(bindingResult).hasErrors();
+        assertEquals(HttpStatus.BAD_REQUEST, responseCatalog.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, responseBook.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, responseNote.getStatusCode());
     }
 
     @Test
-    public void testCreateCatalog_HasErrors_BAD_REQUEST_UniqueValue(){
+    public void createEntity_HasErrors_BAD_REQUEST_UniqueValue(){
         // Arrange
         dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
-        Catalog catalog1 = Catalog.builder().name("catalog").build();
+        dataService.create(book, new FieldDto<String>("name"), bindingResult);
+        Catalog catalog2 = Catalog.builder().name(catalog.getName()).build();
+        Book book2 = Book.builder().name(book.getName()).build();
 
         // Act & Assert
-        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
-            catalogController.create(catalog1, bindingResult);
+        InvalidRequestException catalogException = assertThrows(InvalidRequestException.class, () -> {
+            catalogController.create(catalog2, bindingResult);
         });
-        assertEquals("This field name " + catalog1.getName() + " already exists", exception.getMessage());
+        InvalidRequestException bookException = assertThrows(InvalidRequestException.class, () -> {
+            bookController.addBook(book2, bindingResult);
+        });
+
+        assertEquals("This field name " + catalog.getName() + " already exists", catalogException.getMessage());
+        assertEquals("This field name " + book.getName() + " already exists", bookException.getMessage());
     }
 
     @Test

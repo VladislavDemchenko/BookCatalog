@@ -63,31 +63,33 @@ public class DataAccessService {
 
     public <T,B> void checkingValueUnique(T entity, FieldDto<B> fieldDto){
         try {
-            if (isFieldUnique(entity, fieldDto)) {
-                Object fieldValue = getFieldGetter(entity, fieldDto).invoke(entity);
-                Object idFieldValue = getFieldGetter(entity, new FieldDto<Long>("id")).invoke(entity);
-                Long count = 0L;
-                if(idFieldValue != null) {
-                    count = executeInTransactionReturning(em -> {
-                        Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") " +
-                                "FROM " + entity.getClass().getSimpleName() + " u " +
-                                "WHERE u." + fieldDto.getFieldName() + " = :name " +
-                                "AND u.id <> :id");
-                        request.setParameter("name", fieldValue);
-                        request.setParameter("id", idFieldValue);
-                        return (Long) request.getSingleResult();
-                    });
-                }else{
-                    count = executeInTransactionReturning(em -> {
-                        Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") " +
-                                "FROM " + entity.getClass().getSimpleName() + " u " +
-                                "WHERE u." + fieldDto.getFieldName() + " = :name");
-                        request.setParameter("name", fieldValue);
-                        return (Long) request.getSingleResult();
-                    });
-                }
-                if (count > 0) {
-                    throw new InvalidRequestException("This field name " + fieldValue + " already exists");
+            if(fieldDto != null) {
+                if (isFieldUnique(entity, fieldDto)) {
+                    Object fieldValue = getFieldGetter(entity, fieldDto).invoke(entity);
+                    Object idFieldValue = getFieldGetter(entity, new FieldDto<Long>("id")).invoke(entity);
+                    Long count = 0L;
+                    if (idFieldValue != null) {
+                        count = executeInTransactionReturning(em -> {
+                            Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") " +
+                                    "FROM " + entity.getClass().getSimpleName() + " u " +
+                                    "WHERE u." + fieldDto.getFieldName() + " = :name " +
+                                    "AND u.id <> :id");
+                            request.setParameter("name", fieldValue);
+                            request.setParameter("id", idFieldValue);
+                            return (Long) request.getSingleResult();
+                        });
+                    } else {
+                        count = executeInTransactionReturning(em -> {
+                            Query request = em.createQuery("SELECT COUNT(u." + fieldDto.getFieldName() + ") " +
+                                    "FROM " + entity.getClass().getSimpleName() + " u " +
+                                    "WHERE u." + fieldDto.getFieldName() + " = :name");
+                            request.setParameter("name", fieldValue);
+                            return (Long) request.getSingleResult();
+                        });
+                    }
+                    if (count > 0) {
+                        throw new InvalidRequestException("This field name " + fieldValue + " already exists");
+                    }
                 }
             }
         }catch(IllegalAccessException | InvocationTargetException e){

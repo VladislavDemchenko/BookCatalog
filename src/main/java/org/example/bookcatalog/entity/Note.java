@@ -24,7 +24,6 @@ public class Note {
 
     @NotNull(message = "field Note.body can`t be null")
     @NotEmpty(message = "field Note.body can`t be empty")
-    @Column(nullable = false)
     private String body;
 
     private LocalDateTime creationDate;
