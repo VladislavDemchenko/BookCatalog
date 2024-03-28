@@ -1,17 +1,31 @@
-** Назва проекту: Книжковий каталог
+## Book catalog
 
-Опис проекту: Книжковий каталог - це веб-додаток, який дозволяє користувачам переглядати список книг, додавати нові книги, редагувати та видаляти існуючі записи про книги. Додаток буде використовувати Hibernate для взаємодії з базою даних, Spring для створення веб-сервера та обробки запитів користувачів.
+Project Description: Book Catalog is a web application that allows users to browse a list of books, add new books, edit and delete existing book entries. The application will use Hibernate to interact with the database, Spring to create a web server and handle user requests.
 
-Функціональні можливості:
+<b>Functional capabilities:</b>
 
-Перегляд списку книг.
-Додавання нової книги.
-Редагування існуючої інформації про книгу.
-Видалення запису про книгу.
-Технології:
+Catalog:
+- Creation of catalogs.
+- Browsing of Sypsk catalogs.
+- Deleting directories.
+- Updating the description about the catalog.
+- Catalog sorting.
+  
+Book:
+- Adding a new book.
+- View a list of books.
+- Editing existing book information.
+- Deleting a book entry.
+  
+Note:
+- Adding notes to a book.
+- Deleting notes for books.
+- Search notes by name.
+- Change notes.
 
-Java
-Spring (Spring Boot)
-Hibernate (для взаємодії з базою даних)
-SQL (для створення та управління базою даних)
-HTML та CSS (для створення користувацького інтерфейсу)**
+
+<b>Technologies:</b>
+
+Java(Core, 8+, Collections), Spring(Boot, Web, MVC, REST), 
+Hibernate, PostgreSQL, JUint, Mockito, Reflection API, Stream API, Generics API,
+OOP, Lombok, GitHub, Maven
