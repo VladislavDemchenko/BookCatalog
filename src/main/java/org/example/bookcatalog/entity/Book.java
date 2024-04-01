@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,4 +46,7 @@ public class Book {
     @JoinColumn(name = "catalog_fk")
     private Catalog catalog;
 
+    public void addNote(Note note){
+        notes.add(note);
+    }
 }

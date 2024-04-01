@@ -2,7 +2,7 @@ package org.example.bookcatalog.controller;
 
 import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.entity.Note;
-import org.example.bookcatalog.service.DataService;
+import org.example.bookcatalog.service.entityService.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -11,34 +11,35 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class NoteController {
 
-    private final DataService dataService;
+    private final NoteService noteService;
     @PostMapping("/addNote")
-    public ResponseEntity<?> addNote(@RequestBody Note userNote, BindingResult bindingResult){
-        return dataService.create(userNote, new FieldDto<>(), bindingResult);
+    public ResponseEntity<?> addNote(@RequestBody Note note, BindingResult bindingResult){
+        noteService.addNoteToBook(note);
+        return noteService.create(note, new FieldDto<>(), bindingResult);
     }
 
     @DeleteMapping("/deleteNote/{id}")
     public ResponseEntity<?> deleteNote(@PathVariable Long id){
-        return dataService.delete(id, Note.class);
+        return noteService.delete(id, Note.class);
     }
 
     @PutMapping("/updateNote/{id}")
     public ResponseEntity<?> changeNote(@PathVariable Long id, @RequestParam String descriptionName){
-        return dataService.updateName(id, descriptionName,new FieldDto<String>("name"), Note.class);
+        return noteService.updateName(id, descriptionName,new FieldDto<String>("name"), Note.class);
     }
 
     @GetMapping("/getNote/{id}")
     public ResponseEntity<?> getNote(@PathVariable Long id){
-        return dataService.findById(id, Note.class);
+        return noteService.findById(id, Note.class);
     }
 
     @GetMapping("/getAllNote")
     public ResponseEntity<?> getAllNote(){
-        return dataService.findAll(Note.class);
+        return noteService.findAll(Note.class);
     }
 
     @Autowired
-    public NoteController(DataService dataService) {
-        this.dataService = dataService;
+    public NoteController(NoteService noteService) {
+        this.noteService = noteService;
     }
 }

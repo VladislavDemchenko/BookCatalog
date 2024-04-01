@@ -1,10 +1,7 @@
 package org.example.bookcatalog.service;
 
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.RollbackException;
+import jakarta.persistence.*;
 import org.example.bookcatalog.dto.FieldDto;
-import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.example.bookcatalog.exception.UnsupportedContractException;
 import org.springframework.http.ResponseEntity;
@@ -15,10 +12,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
-public class DataService extends DataAccessService {
+public class DataService extends DataAccessService{
 
     public <T,B> ResponseEntity<?> create(T entity, FieldDto<B> fieldDto, BindingResult bindingResult){
         validateEntity(entity); // not use when we have annotation @Valid under entity
@@ -34,14 +30,11 @@ public class DataService extends DataAccessService {
 
     }
 
-
-    
     public <T> ResponseEntity<?> delete(Long id, Class<T> entityType){
         validId(id, entityType);
         executeInTransaction(em -> em.remove(em.find(entityType, id)));
         return ResponseEntity.ok("Validation successful");
     }
-
 
     public <T> ResponseEntity<?> findById(Long id, Class<T> entityType) {
         validId(id, entityType);
@@ -100,14 +93,7 @@ public class DataService extends DataAccessService {
     }
     
     
-    public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
-        validId(id, Catalog.class);
-        if(executeInTransactionReturning((em) -> em.find(Catalog.class, id)).getDescription().equals(newDescription)){
-            throw new InvalidRequestException("This description is already exist");
-        }
-        executeInTransaction((em)-> em.find(Catalog.class, id).setDescription(newDescription));
-        return ResponseEntity.ok("Validation successful");
-    }
+
 
     
 

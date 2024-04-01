@@ -1,14 +1,17 @@
 package org.example.bookcatalog.controller;
 
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import org.example.bookcatalog.dto.FieldDto;
-import org.example.bookcatalog.entity.Author;
 import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.entity.Note;
 import org.example.bookcatalog.exception.InvalidRequestException;
+import org.example.bookcatalog.service.entityService.BookService;
+import org.example.bookcatalog.service.entityService.CatalogService;
 import org.example.bookcatalog.service.DataAccessService;
 import org.example.bookcatalog.service.DataService;
+import org.example.bookcatalog.service.entityService.NoteService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +36,6 @@ public class ControllersTest {
 
     private Book book;
 
-    private Author author;
     private Note note;
     @Mock
     private BindingResult bindingResult;
@@ -41,31 +43,44 @@ public class ControllersTest {
     private DataAccessService dataAccessService;
     private DataService dataService;
 
+    private CatalogService catalogService;
+
+    private BookService bookService;
+
+    private NoteService noteService;
     private BookController bookController;
     private CatalogController catalogController;
     private NoteController noteController;
 
+
     @Before
     public void setup(){
-        dataService = new DataService(Persistence.createEntityManagerFactory("book-catalog unit"));
-        dataAccessService = new DataAccessService(Persistence.createEntityManagerFactory("book-catalog unit"));
-        catalogController = new CatalogController(dataService);
-        bookController = new BookController(dataService);
-        noteController = new NoteController(dataService);
 
-        catalog = Catalog.builder()
-                .name("testCatalog")
-                .description("my new test catalog")
-                .build();
-        book = Book.builder()
-                .name("testBook")
-                .catalog(catalog)
-                .build();
+        EntityManagerFactory persistenceUnit = Persistence.createEntityManagerFactory("book-catalog unit");
+
+        dataService = new DataService(persistenceUnit);
+        dataAccessService = new DataAccessService(persistenceUnit);
+
+        catalogService = new CatalogService(persistenceUnit);
+        bookService = new BookService(persistenceUnit);
+        noteService = new NoteService(persistenceUnit);
+
+        catalogController = new CatalogController(catalogService);
+        bookController = new BookController(bookService);
+        noteController = new NoteController(noteService);
+
+        catalog = new Catalog();
+        catalog.setName("testCatalog");
+        catalog.setDescription("testDescription");
+
+        book = new Book();
+        book.setName("testBook");
+        book.setCatalog(catalog);
+
         note = Note.builder()
                 .body("testNote")
                 .book(book)
                 .build();
-        author = Author.builder().build();
 
         MockitoAnnotations.initMocks(this);
     }
@@ -128,6 +143,22 @@ public class ControllersTest {
 
         assertEquals("This field name " + catalog.getName() + " already exists", catalogException.getMessage());
         assertEquals("This field name " + book.getName() + " already exists", bookException.getMessage());
+    }
+
+    @Test
+    public void deleteEntity_Successful() {
+        // Arrange
+        catalogController.create(catalog, bindingResult);
+        bookController.addBook(book, bindingResult);
+        Long catalogId = catalog.getId();
+        Long bookId = book.getId();
+
+        // Act
+        ResponseEntity<?> catalogResponse = catalogController.delete(catalogId); //cascade remove
+
+        // Assert
+        assertEquals(HttpStatus.OK, catalogResponse.getStatusCode());
+        assertEquals("Validation successful", catalogResponse.getBody());
     }
 
     @Test

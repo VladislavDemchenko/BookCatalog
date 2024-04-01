@@ -1,15 +1,10 @@
 package org.example.bookcatalog.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.validator.constraints.UniqueElements;
-import org.springframework.stereotype.Repository;
-import org.springframework.validation.annotation.Validated;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +33,10 @@ public class Catalog {
 
     private String description;
 
-    @OneToMany(mappedBy = "catalog", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "catalog", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Book> books = new ArrayList<>();
 
-
+    public void addBook(Book book){
+        books.add(book);
+    }
 }
