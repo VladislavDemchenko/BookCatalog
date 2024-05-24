@@ -6,20 +6,21 @@ Project Description: Book Catalog is a web application that allows users to brow
 
 Catalog:
 - Creation of catalogs.
-- Browsing of Sypsk catalogs.
-- Deleting directories.
-- Updating the description about the catalog.
-- Catalog sorting.
+- Browse catalogs and their contents.
+- Deleting catalogs.
+- Updating the description and name of catalog.
   
 Book:
 - Adding a new book.
-- View a list of books.
-- Editing existing book information.
 - Deleting a book entry.
+- View a list of books.
+- Search by book name.
+- Updating the body and name of book.
+
   
 Note:
 - Adding notes to a book.
-- Deleting notes for books.
+- Deleting a notes entry.
 - Search notes by name.
 - Change notes.
 
