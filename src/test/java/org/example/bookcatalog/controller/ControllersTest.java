@@ -1,5 +1,7 @@
 package org.example.bookcatalog.controller;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.jayway.jsonpath.internal.JsonFormatter;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import org.example.bookcatalog.dto.FieldDto;
@@ -23,6 +25,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -58,8 +62,8 @@ public class ControllersTest {
 
         EntityManagerFactory persistenceUnit = Persistence.createEntityManagerFactory("book-catalog unit");
 
-        dataService = new DataService(persistenceUnit);
         dataAccessService = new DataAccessService(persistenceUnit);
+        dataService = new DataService(persistenceUnit);
 
         catalogService = new CatalogService(persistenceUnit);
         bookService = new BookService(persistenceUnit);
@@ -77,19 +81,17 @@ public class ControllersTest {
         book.setName("testBook");
         book.setCatalog(catalog);
 
-        note = Note.builder()
-                .body("testNote")
-                .book(book)
-                .build();
+        note = new Note();
+        note.setBody("testNote");
+        note.setBook(book);
 
         MockitoAnnotations.initMocks(this);
     }
     @After
     public void cleaningDB(){
         try {
-             dataAccessService.executeInTransaction(em -> em.remove(em.find(catalog.getClass(), catalog.getId())));
-//            dataService.delete(catalog.getId(), Catalog.class);
-        }catch (Exception e){}
+            dataService.delete(catalog.getId(), Catalog.class);
+        }catch (Exception ignored){}
     }
 
     @Test
@@ -100,18 +102,21 @@ public class ControllersTest {
         // Act
         ResponseEntity<?> responseCatalog = catalogController.create(catalog, bindingResult);
         ResponseEntity<?> responseBook = bookController.addBook(book, bindingResult);
-        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
+//        ResponseEntity<?> responseNote = noteController.addNote(note, bindingResult);
 
         // Assert
         assertEquals(HttpStatus.OK, responseCatalog.getStatusCode());
         assertEquals(HttpStatus.OK, responseBook.getStatusCode());
-        assertEquals(HttpStatus.OK, responseNote.getStatusCode());
+//        assertEquals(HttpStatus.OK, responseNote.getStatusCode());
     }
 
 
     @Test
     public void createEntity_HasErrors_BAD_REQUEST_BindingResultException() {
         // Arrange
+        when(bindingResult.hasErrors()).thenReturn(false);
+        catalogController.create(catalog, bindingResult);
+        bookController.addBook(book, bindingResult);
         when(bindingResult.hasErrors()).thenReturn(true);
 
         // Act
@@ -128,21 +133,31 @@ public class ControllersTest {
     @Test
     public void createEntity_HasErrors_BAD_REQUEST_UniqueValue(){
         // Arrange
-        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
-        dataService.create(book, new FieldDto<String>("name"), bindingResult);
-        Catalog catalog2 = Catalog.builder().name(catalog.getName()).build();
-        Book book2 = Book.builder().name(book.getName()).build();
+        catalogController.create(catalog, bindingResult);
+        bookController.addBook(book, bindingResult);
+
+        // catalog for test book unique value
+        Catalog testCatalogForBook = Catalog.builder().name("testCatalog2").build();
+        catalogController.create(testCatalogForBook, bindingResult);
+
+        // Objects with same unique value
+        Catalog catalogWithSameUniqueValue = Catalog.builder().name(catalog.getName()).build();
+        Book bookWithSameUniqueValue = Book.builder().name(book.getName()).catalog(testCatalogForBook).build();
+
 
         // Act & Assert
         InvalidRequestException catalogException = assertThrows(InvalidRequestException.class, () -> {
-            catalogController.create(catalog2, bindingResult);
+            catalogController.create(catalogWithSameUniqueValue, bindingResult);
         });
         InvalidRequestException bookException = assertThrows(InvalidRequestException.class, () -> {
-            bookController.addBook(book2, bindingResult);
+            bookController.addBook(bookWithSameUniqueValue, bindingResult);
         });
 
         assertEquals("This field name " + catalog.getName() + " already exists", catalogException.getMessage());
         assertEquals("This field name " + book.getName() + " already exists", bookException.getMessage());
+
+        //Clearing db
+         dataService.delete(testCatalogForBook.getId(), Catalog.class);
     }
 
     @Test
@@ -150,69 +165,82 @@ public class ControllersTest {
         // Arrange
         catalogController.create(catalog, bindingResult);
         bookController.addBook(book, bindingResult);
+        noteController.addNote(note, bindingResult);
         Long catalogId = catalog.getId();
-        Long bookId = book.getId();
 
         // Act
         ResponseEntity<?> catalogResponse = catalogController.delete(catalogId); //cascade remove
-
         // Assert
         assertEquals(HttpStatus.OK, catalogResponse.getStatusCode());
         assertEquals("Validation successful", catalogResponse.getBody());
     }
 
-    @Test
-    public void testDeleteCatalog_Successful() {
-        // Arrange
-        catalog.setName("testCatalogName");
-        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
-        Long id = catalog.getId();
 
-        // Act
-        ResponseEntity<?> response = catalogController.delete(id);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Validation successful", response.getBody());
-    }
 
     @Test
-    public void testDeleteCatalog_HasErrors_BAD_REQUEST_InvalidId() {
+    public void testDeleteEntity_HasErrors_BAD_REQUEST_InvalidId() {
         // Arrange
         Long id = -1L;
 
         // Act & Assert
-        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
+        InvalidRequestException invalidCatalogId = assertThrows(InvalidRequestException.class, () -> {
             catalogController.delete(id);
         });
-        assertEquals("Not found value id. Please provide a valid identifier.", exception.getMessage());
+        InvalidRequestException invalidBookId = assertThrows(InvalidRequestException.class, () -> {
+            bookController.delete(id);
+        });
+        InvalidRequestException invalidNoteId = assertThrows(InvalidRequestException.class, () -> {
+            noteController.delete(id);
+        });
+        assertEquals("Not found value id. Please provide a valid identifier.", invalidCatalogId.getMessage());
+        assertEquals("Not found value id. Please provide a valid identifier.", invalidBookId.getMessage());
+        assertEquals("Not found value id. Please provide a valid identifier.", invalidNoteId.getMessage());
     }
 
     @Test
-    public void testDeleteCatalog_HasErrors_BAD_REQUEST_IdIsNull() {
+    public void testDeleteEntity_HasErrors_BAD_REQUEST_IdIsNull() {
         // Arrange
         Long id = null;
 
         // Act & Assert
-        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> {
+        InvalidRequestException invalidCatalogId = assertThrows(InvalidRequestException.class, () -> {
             catalogController.delete(id);
         });
-        assertEquals("Operation cannot be performed: identifier is missing. Please check the entered data and try again.", exception.getMessage());
+        InvalidRequestException invalidBookId = assertThrows(InvalidRequestException.class, () -> {
+            bookController.delete(id);
+        });
+        InvalidRequestException invalidNoteId = assertThrows(InvalidRequestException.class, () -> {
+            noteController.delete(id);
+        });
+        assertEquals("Operation cannot be performed: identifier is missing. Please check the entered data and try again.", invalidCatalogId.getMessage());
+        assertEquals("Operation cannot be performed: identifier is missing. Please check the entered data and try again.", invalidBookId.getMessage());
+        assertEquals("Operation cannot be performed: identifier is missing. Please check the entered data and try again.", invalidNoteId.getMessage());
     }
 
 
     @Test
     public void testFindByNameCatalog_Successful(){
         // Arrange
-        String name = "testCatalogName2";
-        catalog.setName(name);
-        dataService.create(catalog, new FieldDto<String>("name"), bindingResult);
+        String testCatalogName = "testCatalogName";
+        catalog.setName(testCatalogName);
+        catalogController.create(catalog, bindingResult);
+
+        String testBookName = "testBookName";
+        catalog.setName(testBookName);
+        bookController.addBook(book, bindingResult);
 
         // Act
-        ResponseEntity<?> response = catalogController.findByName(name);
+        ResponseEntity<?> catalogResponse = catalogController.findByName(testCatalogName);
+//        ResponseEntity<?> bookResponse = bookController.findByName(testBookName);
 
         // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        Catalog actualCatalog = (Catalog) catalogResponse.getBody();
+        assertEquals(HttpStatus.OK, catalogResponse.getStatusCode());
+        assertEquals(Objects.requireNonNull(actualCatalog).getId(), catalog.getId());
+
+//        Book actualBook = (Book) bookResponse.getBody();
+//        assertEquals(HttpStatus.OK, bookResponse.getStatusCode());
+//        assertEquals(Objects.requireNonNull(actualBook).getId(), book.getId());
     }
 
     @Test

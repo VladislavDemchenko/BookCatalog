@@ -1,7 +1,6 @@
 package org.example.bookcatalog.service.entityService;
 
 import jakarta.persistence.EntityManagerFactory;
-import org.example.bookcatalog.entity.Book;
 import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.exception.InvalidRequestException;
 import org.example.bookcatalog.service.DataService;
@@ -10,10 +9,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CatalogService extends DataService {
-    public CatalogService(EntityManagerFactory entityManagerFactory) {
-        super(entityManagerFactory);
-    }
-
     public ResponseEntity<?> updateCatalogDescription(Long id, String newDescription){ //Catalog method
         validId(id, Catalog.class);
         Catalog catalog = executeInTransactionReturning((em) -> em.find(Catalog.class, id));
@@ -23,5 +18,9 @@ public class CatalogService extends DataService {
         validateAndUpdateCreationDate(catalog);
         catalog.setDescription(newDescription);
         return ResponseEntity.ok("Validation successful");
+    }
+
+    public CatalogService(EntityManagerFactory entityManagerFactory) {
+        super(entityManagerFactory);
     }
 }

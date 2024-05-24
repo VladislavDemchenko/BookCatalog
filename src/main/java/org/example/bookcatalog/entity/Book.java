@@ -16,6 +16,7 @@ import java.util.List;
 @Setter
 @Builder
 @ToString
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
 public class Book {
@@ -35,11 +36,12 @@ public class Book {
 
     private LocalDateTime creationDate;
 
-    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    @Setter(AccessLevel.PRIVATE)
+    @OneToMany(mappedBy = "book", cascade = {CascadeType.REMOVE, CascadeType.MERGE,CascadeType.REFRESH})
     private List<Note> notes = new ArrayList<>(); // user note for current book
 
     @Setter(value = AccessLevel.PRIVATE)
-    @ManyToMany(mappedBy = "books", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(mappedBy = "books", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<Author> authors = new ArrayList<>();
 
     @ManyToOne(optional = false) // book can`t be without catalog

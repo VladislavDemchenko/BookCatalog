@@ -7,6 +7,7 @@ import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.service.entityService.CatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,11 @@ public class CatalogController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id){
+        return catalogService.delete(id, Catalog.class);
+    }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> deleteByParam(@RequestParam Long id){
         return catalogService.delete(id, Catalog.class);
     }
 

@@ -26,7 +26,7 @@ public class Note {
 
     private LocalDateTime creationDate;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false) //note can`t be without Book
     @JoinColumn(name = "book_id", foreignKey = @ForeignKey(name = "book_fk"))
     private Book book;
 

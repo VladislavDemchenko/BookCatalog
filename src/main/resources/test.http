@@ -27,18 +27,15 @@ Content-Type: application/json
 
 
 ###
-POST http://localhost:8080/books/create
+POST http://localhost:5432/catalogs/create
 Content-Type: application/json
 Accept: application/json
 
 {
-  "name": "some",
-  "catalog": {
-    "id": 1
-  }
+  "name": "some"
 }
 
 ###
-DELETE http://localhost:8080/catalogs/delete/16
+DELETE http://localhost:5432/catalogs/delete/16
 Content-Type: application/json
 

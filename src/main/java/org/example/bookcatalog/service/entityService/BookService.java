@@ -13,8 +13,8 @@ public class BookService extends DataService {
     }
 
     public void addBookToCatalog(Book book) {
-        Catalog catalog = this.executeInTransactionReturning(em ->  em.find(Catalog.class, book.getCatalog().getId()));
+        Catalog catalog = this.executeInTransactionReturning(em -> em.find(Catalog.class, book.getCatalog().getId()));
         catalog.addBook(book);
-        this.validateAndUpdateCreationDate(book);
+        this.validateAndUpdateCreationDate(catalog);
     }
 }

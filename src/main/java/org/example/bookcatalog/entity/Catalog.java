@@ -16,6 +16,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 @ToString(exclude = "books")
 public class Catalog {
 
@@ -33,7 +34,8 @@ public class Catalog {
 
     private String description;
 
-    @OneToMany(mappedBy = "catalog", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Setter(AccessLevel.PRIVATE)
+    @OneToMany(mappedBy = "catalog", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.EAGER)
     private List<Book> books = new ArrayList<>();
 
     public void addBook(Book book){

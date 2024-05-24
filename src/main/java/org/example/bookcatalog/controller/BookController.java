@@ -2,6 +2,7 @@ package org.example.bookcatalog.controller;
 
 import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.entity.Book;
+import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.service.entityService.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,10 @@ public class BookController {
         return bookService.findById(id, Book.class);
     }
 
+    @GetMapping("/findByName")
+    public ResponseEntity<?> findByName(@RequestParam String bookName){
+        return bookService.findByName(bookName, Book.class);
+    }
 
     @GetMapping("/allBook")
     public ResponseEntity<?> getAllUsers(){

@@ -15,16 +15,16 @@ public class NoteController {
     @PostMapping("/addNote")
     public ResponseEntity<?> addNote(@RequestBody Note note, BindingResult bindingResult){
         noteService.addNoteToBook(note);
-        return noteService.create(note, new FieldDto<>(), bindingResult);
+        return noteService.create(note, null, bindingResult);
     }
 
     @DeleteMapping("/deleteNote/{id}")
-    public ResponseEntity<?> deleteNote(@PathVariable Long id){
+    public ResponseEntity<?> delete(@PathVariable Long id){
         return noteService.delete(id, Note.class);
     }
 
     @PutMapping("/updateNote/{id}")
-    public ResponseEntity<?> changeNote(@PathVariable Long id, @RequestParam String descriptionName){
+    public ResponseEntity<?> change(@PathVariable Long id, @RequestParam String descriptionName){
         return noteService.updateName(id, descriptionName,new FieldDto<String>("name"), Note.class);
     }
 

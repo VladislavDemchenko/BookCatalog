@@ -32,7 +32,11 @@ public class DataService extends DataAccessService{
 
     public <T> ResponseEntity<?> delete(Long id, Class<T> entityType){
         validId(id, entityType);
-        executeInTransaction(em -> em.remove(em.find(entityType, id)));
+        executeInTransaction(em -> {
+            T entity = em.find(entityType, id);
+            em.refresh(entity);
+            em.remove(entity);
+        });
         return ResponseEntity.ok("Validation successful");
     }
 
@@ -53,15 +57,18 @@ public class DataService extends DataAccessService{
     }
 
     public <T> ResponseEntity<?> findByName(String name, Class<T> entityType){
-            var entity = executeInTransactionReturning((em) -> {
-                try {
-                    return em.createQuery("select c from " + entityType.getSimpleName() + " c where c.name = :name")
-                            .setParameter("name", name)
-                            .getSingleResult();
-                }catch (NoResultException e){
-                    throw new InvalidRequestException("Not found current name");
-                }
-            });
+        var entity = executeInTransactionReturning((em) -> {
+            try {
+                System.out.println(name);
+                return em.createQuery("select c from " + entityType.getSimpleName() + " c where c.name = :name")
+                        .setParameter("name", name)
+                        .getSingleResult();
+            }catch (NoResultException e){
+                System.out.println(e);
+                em.getTransaction().commit();
+                throw new InvalidRequestException("Not found current name");
+            }
+        });
         return ResponseEntity.ok(entity);
     }
 
@@ -125,7 +132,6 @@ public class DataService extends DataAccessService{
             return ResponseEntity.ok("Validation successful");
         }
     }
-
     public DataService(EntityManagerFactory entityManagerFactory) {
         super(entityManagerFactory);
     }
