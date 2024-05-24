@@ -13,7 +13,7 @@ public class CatalogService extends DataService {
         validId(id, Catalog.class);
         Catalog catalog = executeInTransactionReturning((em) -> em.find(Catalog.class, id));
         if(catalog.getDescription().equals(newDescription)){
-            throw new InvalidRequestException("This description is already exist");
+            throw new InvalidRequestException("This description already exist");
         }
         validateAndUpdateCreationDate(catalog);
         catalog.setDescription(newDescription);

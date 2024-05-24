@@ -2,7 +2,6 @@ package org.example.bookcatalog.controller;
 
 import org.example.bookcatalog.dto.FieldDto;
 import org.example.bookcatalog.entity.Book;
-import org.example.bookcatalog.entity.Catalog;
 import org.example.bookcatalog.service.entityService.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +41,17 @@ public class BookController {
     public ResponseEntity<?> getAllUsers(){
         return bookService.findAll(Book.class);
     }
+
+    @PutMapping("/updateName/{id}")
+    public ResponseEntity<?> changeName(@PathVariable Long id, @RequestParam String bookName){
+        return bookService.updateName(id, bookName, new FieldDto<String>("name"), Book.class);
+    }
+
+    @PutMapping("/updateBody/{id}")
+    public ResponseEntity<?> changeDescriptionName(@PathVariable Long id, @RequestParam String bodyName){
+        return bookService.updateBookBody(id, bodyName);
+    }
+
     @Autowired
     public BookController(BookService bookService) {
         this.bookService = bookService;
